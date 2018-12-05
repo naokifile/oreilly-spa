@@ -28,14 +28,19 @@ spa.shell = (function(){
                 + '<div class="spa-shell-foot"></div>'
                 + '<div class="spa-shell-chat"></div>'
                 + '<div class="spa-shell-modal"></div>',
-            chat_extend_time    : 1000,
+            chat_extended_time    : 1000,
             chat_retract_time   : 300,
-            chat_extend_height  : 450,
+            chat_extended_height  : 450,
             chat_retract_height : 15,
+            chat_extended_title : 'Click to retract',
+            chat_retract_title  : 'Click to extend',
         },
-        stateMap = {$container : null},
+        stateMap = {
+            $container          : null,
+            is_chat_retracted   : true,
+        },
         jqueryMap = {},
-        setJqueryMap, toggleChat, initModule;
+        setJqueryMap, toggleChat, onClickChat, initModule;
     // ------------ モジュールスコープ変数終了 ------------
 
     // ------------ ユーティリティメソッド変数開始 ------------
@@ -63,6 +68,9 @@ spa.shell = (function(){
     // 戻り値 : boolean
     //  * true - スライダーアニメーションが開始された
     //  * false - スライダーアニメーションが開始されなかった
+    // 状態 : stateMap.is_chat_retracted
+    //  * true - スライダーは格納されている
+    //  * false - スライダーは拡大されている
     //
     toggleChat = function(do_extend, callback){
         var
@@ -77,20 +85,43 @@ spa.shell = (function(){
         // チャットスライダーの拡大開始
         if(do_extend){
             jqueryMap.$chat.animate(
-                { height : configMap.chat_extend_height},
+                { height : configMap.chat_extended_height},
                 configMap.chat_extend_time,
                 function(){
+                    jqueryMap.$chat.attr(
+                        'title', configMap.chat_extended_title
+                    );
+                    stateMap.is_chat_retracted = true;
                     if(callback){ callback( jqueryMap.$chat);}
                 }
             );
             return true;
         }
         // チャットスライダーの拡大終了
+
+        // チャットスライダーの格納開始
+        jqueryMap.$chat.animate(
+            { height : configMap.chat_retract_height},
+            configMap.chat_retract_time,
+            function(){
+                jqueryMap.$chat.attr(
+                    'title', configMap.chat_retract_title,
+                );
+                stateMap.is_chat_retracted = true;
+                if(callback){ callback( jqueryMap.$chat);}
+            }
+        );
+        return true;
+        // チャットスライダーの格納終了
     };
     // DOMメソッド/toggleChat/終了
     // ------------ DOMメソッド終了 ------------
 
     // ------------ イベントハンドラ開始 ------------
+    onClickChat = function(event){
+        toggleChat( stateMap.is_chat_retracted);
+        return false;
+    }
     // ------------ イベントハンドラ終了 ------------
 
     // ------------ パブリックメソッド開始 ------------
@@ -100,9 +131,11 @@ spa.shell = (function(){
         $container.html( configMap.main_html);
         setJqueryMap();
 
-        // 切替テスト
-        setTimeout(function(){toggleChat(true);},3000);
-        setTimeout(function(){toggleChat(false);},8000);
+        // チャットスライダーを初期化し、クリックイベントハンドラをバインドする
+        stateMap.is_chat_retracted = true;
+        jqueryMap.$chat
+            .attr('title', configMap.chat_retract_title)
+            .click(onClickChat);
     };
     // パブリックメソッド/initModule/終了
     return {initModule: initModule};
